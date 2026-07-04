@@ -8,7 +8,7 @@
 //=============================================================================
 
 /*:
- * @plugindesc DhoomMessageSE 확장 - 지정 프리셋에서 글자 SE를 voice1~N 중 랜덤 재생
+ * @plugindesc DhoomMessageSE 확장 - 지정 프리셋에서 글자 SE를 voice1~N 중 랜덤 재생 (v1.1 스킵 중복재생 수정)
  * @author Claude
  *
  * @param Target Preset Name
@@ -45,6 +45,17 @@
  * @off 허용함
  * @default true
  *
+ * @param Skip Voice Mode
+ * @text 스킵 시 보이스 처리
+ * @desc 엔터/시프트로 대사를 한꺼번에 넘길 때 보이스 처리 방식.
+ * once = 1개만 재생 / mute = 재생 안 함
+ * @type select
+ * @option 1개만 재생 (once)
+ * @value once
+ * @option 재생 안 함 (mute)
+ * @value mute
+ * @default once
+ *
  * @help =============================================================================
  * • 사용법
  * =============================================================================
@@ -65,6 +76,13 @@
  *   - 보이스 ON/OFF 전환은 이 플러그인이 아니라, 메시지 표시 전에
  *     조건 분기로 \mse[Voice] / \mse[Default] 프리셋을 바꾸는 식으로 처리하면 됩니다.
  *
+ * • v1.1 변경점 (스킵 중복재생 수정)
+ *   - 엔터/시프트 빨리감기로 남은 글자가 한 프레임에 전부 출력될 때,
+ *     글자 수만큼 보이스가 동시에 터지던 문제를 수정.
+ *   - 대상 프리셋에서는 보이스를 "한 프레임에 최대 1회"만 재생합니다.
+ *     (정상 속도 타이핑은 프레임당 글자 1개 이하이므로 영향 없음)
+ *   - [스킵 시 보이스 처리]를 mute로 두면, 빨리감기 중에는 아예 재생하지 않습니다.
+ *
  * ★ 플러그인 관리자에서 반드시 DhoomMessageSE 보다 아래에 두세요.
  */
 
@@ -84,9 +102,13 @@
     var COUNT       = Math.max(1, Number(params['Voice Count'] || 6));
     var START_IDX   = Math.max(0, Number(params['Start Index'] || 1));
     var NO_REPEAT   = String(params['No Repeat'] || 'true') === 'true';
+    var SKIP_MODE   = String(params['Skip Voice Mode'] || 'once'); // 'once' | 'mute'
 
     // 직전에 고른 파일명 (연속 방지용)
     var _lastVoiceName = null;
+
+    // 마지막으로 보이스를 재생한 프레임 (한 프레임 1회 제한용)
+    var _lastVoiceFrame = -1;
 
     // 랜덤 음성 파일명 하나 선택
     function pickVoiceName() {
@@ -107,9 +129,19 @@
     // 대상 프리셋이 활성인 동안에만, 그 프리셋의 characterSe.name 을
     // 잠깐 랜덤 파일명으로 바꿔치기한 뒤 원본을 호출하고, 곧바로 원복한다.
     //
-    // 이렇게 하면 글자 SE에만 영향을 주고 (원본이 characterSe를 고를 때만
-    // 바뀐 이름이 쓰임), word/sentence/page SE 및 볼륨·피치·variance 등
-    // 나머지 동작은 원본 그대로 유지된다.
+    // ★ 스킵(빨리감기) 대응 (v1.1):
+    //   엔터/시프트로 빨리감기를 하면 MV는 남은 글자를 "같은 한 프레임" 안에서
+    //   전부 processCharacter로 처리하므로, updateMessageSE도 글자 수만큼 연속
+    //   호출되어 보이스가 N개 동시에 재생되던 문제가 있었다.
+    //
+    //   → Graphics.frameCount로 "이 프레임에 이미 보이스를 재생했는지"를 추적해,
+    //     같은 프레임의 두 번째 호출부터는 characterSe.name 을 빈 문자열('')로
+    //     바꿔치기한다. MV의 AudioManager.playSe / playStaticSe 는 name이 비어
+    //     있으면 아무것도 재생하지 않으므로, DhoomMessageSE의 글자 간격 카운터 등
+    //     나머지 로직은 그대로 돌면서 소리만 조용히 스킵된다.
+    //
+    //   정상 속도 타이핑은 프레임당 글자가 1개 이하이므로 이 제한의 영향을
+    //   받지 않는다.
     //-------------------------------------------------------------------------
     var _Window_Message_updateMessageSE = Window_Message.prototype.updateMessageSE;
     Window_Message.prototype.updateMessageSE = function (i, textState) {
@@ -122,9 +154,28 @@
             return;
         }
 
-        // characterSe.name 만 임시로 랜덤 교체
+        var frame       = Graphics.frameCount;
+        var isFast      = this._showFast || this._lineShowFast || this._pauseSkip;
+        var alreadyThis = (_lastVoiceFrame === frame);
+
+        // 이번 호출에서 실제로 소리를 낼지 결정
+        var playThisTime;
+        if (alreadyThis) {
+            // 같은 프레임에서 이미 1회 재생함 → 무음 처리 (동시재생 방지)
+            playThisTime = false;
+        } else if (isFast && SKIP_MODE === 'mute') {
+            // 빨리감기 중 + mute 모드 → 재생하지 않음
+            playThisTime = false;
+        } else {
+            playThisTime = true;
+        }
+
+        // characterSe.name 만 임시로 교체 (재생 시 랜덤, 무음 시 '')
         var originalName = preset.characterSe.name;
-        preset.characterSe.name = pickVoiceName();
+        preset.characterSe.name = playThisTime ? pickVoiceName() : '';
+        if (playThisTime) {
+            _lastVoiceFrame = frame;
+        }
         try {
             _Window_Message_updateMessageSE.call(this, i, textState);
         } finally {

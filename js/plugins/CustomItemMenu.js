@@ -240,6 +240,15 @@
         Window_Command.prototype.resetFontSettings.call(this);
         this.contents.fontSize = CFG.FONT_MENU;
     };
+    // 왼쪽 화살표를 누르면 아이템 목록으로 이동 (엔터는 기존대로 사용)
+    Window_ItemButton.prototype.processCursorMove = function() {
+        if (this.isOpenAndActive() && Input.isRepeated('right')) {
+            SoundManager.playCursor();
+            this.callHandler('goItemList');
+            return;
+        }
+        Window_Command.prototype.processCursorMove.call(this);
+    };
 
     //=========================================================================
     //  Window_CustomItemList (윈도우3)
@@ -515,8 +524,9 @@
 
     Scene_Menu.prototype.createItemButtonWindow = function() {
         this._itemButtonWindow = new Window_ItemButton();
-        this._itemButtonWindow.setHandler('item',   this.onItemButtonOk.bind(this));
-        this._itemButtonWindow.setHandler('cancel', this.popScene.bind(this));
+        this._itemButtonWindow.setHandler('item',       this.onItemButtonOk.bind(this));
+        this._itemButtonWindow.setHandler('goItemList', this.onItemButtonGoList.bind(this));
+        this._itemButtonWindow.setHandler('cancel',     this.popScene.bind(this));
         this.addWindow(this._itemButtonWindow);
         this._itemButtonWindow.activate();
         this._itemButtonWindow.select(0);
@@ -542,6 +552,16 @@
     // ITEM 확정 → 목록 창 활성화, 첫 아이템(없으면 USE)에 커서
     Scene_Menu.prototype.onItemButtonOk = function() {
         this._itemButtonWindow.deactivate();
+        this._listWindow.refresh();
+        this._listWindow.activate();
+        var start = (this._listWindow.filledCount() > 0) ? 0 : this._listWindow.useIndex();
+        this._listWindow.select(start);
+    };
+
+    // 물품 메뉴에서 왼쪽 화살표 → 목록 창 활성화 (엔터와 동일하게 첫 아이템/USE로)
+    Scene_Menu.prototype.onItemButtonGoList = function() {
+        this._itemButtonWindow.deactivate();
+        this._itemButtonWindow.select(0);
         this._listWindow.refresh();
         this._listWindow.activate();
         var start = (this._listWindow.filledCount() > 0) ? 0 : this._listWindow.useIndex();

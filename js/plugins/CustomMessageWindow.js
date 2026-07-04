@@ -3,7 +3,7 @@
 //=============================================================================
 
 /*:
- * @plugindesc v1.4.0 텍스트창(메시지 윈도우)의 크기, 위치, 여백, 폰트, 타이핑 속도를 자유롭게 커스텀합니다.
+ * @plugindesc v1.6.0 텍스트창(메시지 윈도우)의 크기, 위치, 여백, 폰트, 타이핑 속도를 자유롭게 커스텀합니다.
  * @author Claude
  *
  * @param --- 창 크기 ---
@@ -164,12 +164,12 @@
  * @param typeSpeed
  * @parent --- 타이핑 속도 ---
  * @text 타이핑 속도
- * @desc 글자 한 개를 출력하는 데 걸리는 프레임 수.
- *       1 = 매 프레임마다 한 글자 (매우 빠름)
- *       3 = 기본값 (보통)
- *       10 = 느림
- *       0 = 기본값 사용
+ * @desc 글자 한 개를 출력하는 데 걸리는 프레임 수. (소수 입력 가능)
+ *       3 = 기본(보통) / 10 = 느림 / 1 = 매 프레임 한 글자
+ *       0.5 = 매 프레임 두 글자 / 0.25 = 매 프레임 네 글자
+ *       0 = 기본값(즉시 완료) 사용
  * @type number
+ * @decimals 2
  * @min 0
  * @max 60
  * @default 0
@@ -178,8 +178,9 @@
  * @parent --- 타이핑 속도 ---
  * @text 결정버튼 가속 배율
  * @desc 결정 버튼(Enter/Space/Z)을 누를 때 속도를 몇 배 빠르게 할지.
- *       1이면 가속 없음, 4이면 4배 빠르게. 0이면 기본값(즉시 완료) 사용.
+ *       1이면 가속 없음, 4이면 4배 빠르게. 0이면 기본값(즉시 완료) 사용. (소수 가능)
  * @type number
+ * @decimals 2
  * @min 0
  * @max 20
  * @default 0
@@ -195,6 +196,11 @@
  * ▶ 사용법
  *   플러그인 매니저에서 각 값을 설정하세요.
  *   0 또는 -1로 설정된 항목은 RPG Maker 기본값을 그대로 사용합니다.
+ *
+ * ▶ 즉시 출력 (빨리 넘기기)
+ *   텍스트가 타이핑되는 도중 [X] · [Shift] · [Enter] 키 중 하나를
+ *   누르고 있으면 남은 텍스트가 애니메이션 없이 즉시 전체 표시됩니다.
+ *   (타이핑 속도 설정과 무관)
  *
  * ▶ 커스텀 폰트 등록 방법
  *   1) 폰트 파일(.ttf/.woff 등)을 프로젝트의 fonts/ 폴더에 복사
@@ -246,11 +252,28 @@
  *   v1.2.0 - 수직 여백, 줄 간격, lineHeight 파라미터 추가
  *   v1.3.0 - 폰트 이름/굵기/기울임/색상/외곽선 설정 추가
  *   v1.4.0 - 타이핑 속도(typeSpeed), 가속 배율(typeSpeedBoost) 추가
+ *   v1.5.0 - 즉시 출력 기능 추가: 텍스트 출력 도중 X키 또는 Shift키를
+ *            누르면 남은 텍스트가 애니메이션 없이 즉시 전체 표시됨 (X/Shift/Enter)
+ *   v1.6.0 - 타이핑 속도 소수점 입력 지원. 0.5 = 프레임당 2글자처럼
+ *            1 미만 값으로 초고속 출력 가능(누적 방식). typeSpeedBoost도 소수 허용.
  * ============================================================
  */
 
 (function() {
     'use strict';
+
+    //=========================================================================
+    // 즉시 출력 키 등록
+    //=========================================================================
+    // MV 기본 keyMapper에는 X키(88)가 없으므로 직접 등록한다.
+    // Input이 키 상태(_currentState 등)를 기록하려면 keyMapper에 반드시
+    // 해당 keyCode가 있어야 하므로 이 등록이 필수다.
+    // (다른 플러그인이 88을 이미 쓰고 있으면 그 값을 존중해 덮어쓰지 않는다.)
+    if (!Input.keyMapper[88]) {
+        Input.keyMapper[88] = 'msgwinInstant';
+    }
+    // 실제 감지에 사용할 논리키 이름(위에서 88이 이미 다른 이름이면 그 이름 사용)
+    var _INSTANT_KEY = Input.keyMapper[88];
 
     //=========================================================================
     // 파라미터 파싱
@@ -277,8 +300,8 @@
         fontOutlineColor: String(parameters['fontOutlineColor'] || '').trim(),
         fontOutlineWidth: parseInt(parameters['fontOutlineWidth']) || 0,
         // 타이핑 속도
-        typeSpeed:        parseInt(parameters['typeSpeed'])        || 0,
-        typeSpeedBoost:   parseInt(parameters['typeSpeedBoost'])   || 0,
+        typeSpeed:        parseFloat(parameters['typeSpeed'])       || 0,
+        typeSpeedBoost:   parseFloat(parameters['typeSpeedBoost'])  || 0,
     };
 
     // 런타임 덮어쓰기용 복사본
@@ -295,7 +318,11 @@
         var win = scene._messageWindow;
         var newW = win.windowWidth();
         var newH = win.windowHeight();
-        win.move(win.x, win.y, newW, newH);
+        // X 위치 재계산 (자동이면 가운데 정렬 유지)
+        var newX = _runtimeParams.windowX >= 0
+                    ? _runtimeParams.windowX
+                    : (Graphics.boxWidth - newW) / 2;
+        win.move(newX, win.y, newW, newH);
         win.createContents();
     }
 
@@ -310,6 +337,7 @@
 
         var sub  = (args[0] || '').toUpperCase();
         var val  = parseInt(args[1]);
+        var fval = parseFloat(args[1]);  // 소수 허용 파라미터(SPEED 등)용
         var sval = (args[1] || '').trim();
 
         switch (sub) {
@@ -353,10 +381,10 @@
                 break;
             // 타이핑 속도
             case 'SPEED':
-                _runtimeParams.typeSpeed = isNaN(val) ? 0 : Math.max(0, val);
+                _runtimeParams.typeSpeed = isNaN(fval) ? 0 : Math.max(0, fval);
                 break;
             case 'SPEED_BOOST':
-                _runtimeParams.typeSpeedBoost = isNaN(val) ? 0 : Math.max(0, val);
+                _runtimeParams.typeSpeedBoost = isNaN(fval) ? 0 : Math.max(0, fval);
                 break;
             case 'RESET':
                 _runtimeParams = JSON.parse(JSON.stringify(_defaultParams));
@@ -409,6 +437,23 @@
     Window_Message.prototype.standardFontSize = function() {
         if (_runtimeParams.fontSize > 0) return _runtimeParams.fontSize;
         return _Window_Base_standardFontSize.call(this);
+    };
+
+    // ── 매 메시지 시작 시 최신 파라미터로 창 크기를 재적용
+    //    원본 startMessage 는 newPage() → createContents 로 첫 페이지를
+    //    세팅하므로, 그 "전에" width/height 를 확정해야 내용이 올바른
+    //    크기로 그려진다. 이렇게 하면 MSGWIN WIDTH/HEIGHT/LINES 커맨드를
+    //    언제 실행하든 다음 메시지부터 확실히 반영된다.
+    var _Window_Message_startMessage = Window_Message.prototype.startMessage;
+    Window_Message.prototype.startMessage = function() {
+        var newW = this.windowWidth();
+        var newH = this.windowHeight();
+        if (this.width !== newW || this.height !== newH) {
+            this.width  = newW;
+            this.height = newH;
+            this.createContents();
+        }
+        _Window_Message_startMessage.call(this);
     };
 
     // ── X 위치
@@ -495,6 +540,7 @@
     Window_Message.prototype.initialize = function() {
         _Window_Message_initialize.call(this);
         this._typeWait = 0;
+        this._typeBudget = 0;
         this.width  = this.windowWidth();
         this.height = this.windowHeight();
         this.x      = _runtimeParams.windowX >= 0
@@ -514,12 +560,60 @@
     // 글자 출력의 핵심인 shouldBreakHere 판단만 속도 카운터로 끼워 넣는다.
     // → processCharacter 자체는 건드리지 않으므로 종료 처리가 깨지지 않음.
 
+    // 즉시 출력 키가 눌렸는지 판정.
+    // X키(_INSTANT_KEY), Shift키('shift'), Enter키('ok') 중 하나라도
+    // 누르고 있으면 true.
+    function _isInstantKeyPressed() {
+        return Input.isPressed(_INSTANT_KEY) ||
+               Input.isPressed('shift') ||
+               Input.isPressed('ok');
+    }
+
+    // ★ 남은 텍스트를 애니메이션 없이 전부 즉시 그린다.
+    //    원본 updateMessage 루프를 재현하되, 속도/대기(_waitCount·pause)를
+    //    모두 무시하고 페이지 끝(needsNewPage)까지 강제로 채운다.
+    //    페이지가 넘어가는 경우(다음 페이지가 남은 경우)는 원본과 동일하게
+    //    거기서 멈추고 사용자의 다음 입력을 기다린다.
+    Window_Message.prototype.instantFlushText = function() {
+        var textState = this._textState;
+        if (!textState) return;
+
+        while (!this.isEndOfText(textState)) {
+            // 페이지가 가득 차면 여기서 멈춘다(원본 동작 보존).
+            if (this.needsNewPage(textState)) {
+                break;
+            }
+            this.processCharacter(textState);
+            // \!(강제 입력 대기)로 pause가 걸리면 그 지점에서 멈춘다.
+            // (시간 대기 \. \| 로 인한 _waitCount 는 아래에서 무시)
+            if (this.pause) {
+                break;
+            }
+        }
+
+        // 대기/일시정지 상태는 즉시 출력이므로 해제한다.
+        this._waitCount = 0;
+
+        if (this.isEndOfText(textState)) {
+            this.onEndOfText();
+        }
+    };
+
     var _Window_Message_updateMessage = Window_Message.prototype.updateMessage;
     Window_Message.prototype.updateMessage = function() {
+        // ★ 즉시 출력: 출력 중(_textState 존재)에 X/Shift/Enter를 누르면
+        //    타이핑 애니메이션 없이 남은 텍스트를 통째로 그린다.
+        if (this._textState && _isInstantKeyPressed()) {
+            this._typeWait = 0;
+            this._typeBudget = 0;
+            this.instantFlushText();
+            return true;
+        }
+
         var speed = _runtimeParams.typeSpeed;
 
-        // speed 미설정(0) 또는 1 이하 → 원본 그대로
-        if (!speed || speed <= 1) {
+        // speed 미설정(0) → 원본 그대로(즉시 완료)
+        if (!speed || speed <= 0) {
             return _Window_Message_updateMessage.call(this);
         }
 
@@ -545,22 +639,30 @@
         // 가속 배율
         var effectiveSpeed = speed;
         if (boost >= 2 && (this._showFast || this._lineShowFast)) {
-            effectiveSpeed = Math.max(1, Math.floor(speed / boost));
+            effectiveSpeed = Math.max(0.0001, speed / boost);
         }
 
-        // 프레임 카운터 대기 (글자 1개당 effectiveSpeed 프레임 기다림)
-        this._typeWait = (this._typeWait || 0) + 1;
-        if (this._typeWait < effectiveSpeed) {
+        // ★ 소수 속도 지원: 누적(accumulator) 방식.
+        //   effectiveSpeed = "글자 1개당 걸리는 프레임 수"(작을수록 빠름).
+        //   매 프레임 (1 / effectiveSpeed) 만큼 '출력 예산'을 쌓고,
+        //   예산이 1 이상 쌓일 때마다 글자를 1개씩 출력한다.
+        //   - effectiveSpeed = 3   → 3프레임마다 글자 1개(정수, 기존과 동일)
+        //   - effectiveSpeed = 1   → 매 프레임 글자 1개
+        //   - effectiveSpeed = 0.5 → 매 프레임 글자 2개
+        //   - effectiveSpeed = 1.5 → 3프레임마다 글자 2개
+        this._typeBudget = (this._typeBudget || 0) + (1 / effectiveSpeed);
+        if (this._typeBudget < 1) {
             return true;
         }
-        this._typeWait = 0;
 
-        // 글자 1개를 출력한다.
-        // 제어문자(이스케이프 시퀀스, 줄바꿈)는 글자 카운트 없이 연속 처리하고,
-        // 실제 보이는 글자를 1개 출력하면 이번 프레임은 종료한다.
+        // ★ 쌓인 예산(_typeBudget)만큼 '보이는 글자'를 출력한다.
+        //   speed >= 1 이면 예산은 정확히 1이라 글자 1개만 나온다(기존 동작).
+        //   speed < 1 (예: 0.5)이면 예산이 2 이상 쌓여 여러 글자가 나온다.
+        //   제어문자(이스케이프 시퀀스, 줄바꿈)는 예산을 소모하지 않고
+        //   연속 처리하며, 보이는 글자를 1개 낼 때마다 예산을 1 차감한다.
         var textState = this._textState;
 
-        while (textState.index < textState.text.length) {
+        while (this._typeBudget >= 1 && textState.index < textState.text.length) {
             var prevIndex = textState.index;
             this.processCharacter(textState);
 
@@ -568,10 +670,10 @@
             // (다음 프레임에서 위의 카운트다운 블록이 처리함)
             if (this._waitCount > 0) return true;
 
-            // 실제 보이는 글자(비제어문자, 비줄바꿈)를 출력했으면 종료
+            // 실제 보이는 글자(비제어문자, 비줄바꿈)를 출력했으면 예산 1 차감
             var ch = textState.text[prevIndex];
             if (ch !== '\x1b' && ch !== '\n' && ch !== '\r') {
-                break;
+                this._typeBudget -= 1;
             }
         }
 
@@ -581,7 +683,7 @@
         // 모두 출력 완료.
         // MV 원본과 동일하게: onEndOfText()를 호출 (_textState=null은 그 안에서 처리),
         // return true. (_textState가 있는 분기는 항상 true를 반환하는 것이 원본 동작)
-        this._typeWait = 0;
+        this._typeBudget = 0;
         this.onEndOfText();
         return true;
     };
