@@ -242,7 +242,7 @@
     };
     // 왼쪽 화살표를 누르면 아이템 목록으로 이동 (엔터는 기존대로 사용)
     Window_ItemButton.prototype.processCursorMove = function() {
-        if (this.isOpenAndActive() && Input.isRepeated('right')) {
+        if (this.isOpenAndActive() && Input.isRepeated('left')) {
             SoundManager.playCursor();
             this.callHandler('goItemList');
             return;
@@ -317,6 +317,16 @@
     };
     Window_CustomItemList.prototype.isCurrentItemEnabled = function() {
         return this.isEnabledIndex(this.index());
+    };
+
+    // 아이템 목록에서 왼쪽 화살표 → 물품 메뉴로 복귀 (취소와 동일 처리)
+    Window_CustomItemList.prototype.processCursorMove = function() {
+        if (this.isOpenAndActive() && Input.isRepeated('left')) {
+            SoundManager.playCursor();
+            this.callHandler('cancel');
+            return;
+        }
+        Window_Selectable.prototype.processCursorMove.call(this);
     };
 
     Window_CustomItemList.prototype.makeItemList = function() {
