@@ -33,7 +33,7 @@
                 position: fixed;
                 inset: 0;
                 z-index: 1001;
-                background: rgba(0, 0, 0, 0.85);
+                background: rgba(0, 0, 0, 0.8);
                 justify-content: center;
                 align-items: center;
             }
@@ -41,58 +41,59 @@
             #credit-content {
                 max-width: 460px;
                 width: 82%;
-                max-height: 74%;
+                max-height: 76%;
                 overflow-y: auto;
                 padding: 28px 32px;
                 color: #eee;
-                background: #161616;
+                background: #1a1a1a;
                 border: 1px solid #444;
-                border-radius: 12px;
+                border-radius: 10px;
                 font-family: sans-serif;
-                line-height: 1.65;
+                line-height: 1.7;
             }
             #credit-content h2 {
                 margin: 0 0 20px;
                 text-align: center;
-                letter-spacing: 4px;
                 font-size: 22px;
+                letter-spacing: 2px;
             }
-            .credit-section { margin-bottom: 18px; }
-            .credit-label {
-                margin: 0 0 4px;
+            .credit-group { margin-bottom: 18px; }
+            .credit-group .role {
+                display: block;
+                margin-bottom: 4px;
                 font-size: 13px;
-                font-weight: bold;
+                color: #ff9db4;
                 letter-spacing: 1px;
-                color: #ffd45e;
             }
-            .credit-row {
-                display: flex;
-                justify-content: space-between;
-                gap: 12px;
-                font-size: 14px;
-                padding: 2px 0;
+            .credit-group .name {
+                display: block;
+                padding-left: 10px;
+                font-size: 15px;
+                color: #fff;
             }
-            .credit-row .role { color: #aaa; }
-            .credit-row .name { color: #fff; text-align: right; }
-            .credit-note { color: #888; font-style: italic; }
+            .credit-group .name small { color: #888; }
+            .credit-note {
+                padding-left: 10px;
+                font-size: 13px;
+                color: #999;
+            }
             .credit-divider {
-                height: 1px;
-                margin: 18px 0;
-                background: #333;
-                border: 0;
+                margin: 20px 0;
+                border: none;
+                border-top: 1px solid #383838;
             }
             #credit-close {
                 display: block;
                 margin: 24px auto 0;
-                padding: 8px 28px;
+                padding: 8px 24px;
                 color: #fff;
-                background: #2a2a2a;
+                background: #333;
                 border: 1px solid #666;
                 border-radius: 6px;
                 cursor: pointer;
                 font-size: 14px;
             }
-            #credit-close:hover { background: #3a3a3a; }
+            #credit-close:hover { background: #444; }
         </style>
     </head>
     <body style="background-color: black">
@@ -114,39 +115,52 @@
         <button id="credit-btn" onclick="document.getElementById('credit-modal').classList.add('show')">크레딧</button>
         <div id="credit-modal">
             <div id="credit-content">
-                <h2>C R E D I T</h2>
+                <h2>CREDIT</h2>
 
-                <div class="credit-section">
-                    <p class="credit-label">제작</p>
-                    <div class="credit-row"><span class="role">파랑네모</span><span class="name">@Kamome_nemo</span></div>
+                <div class="credit-group">
+                    <span class="role">제작</span>
+                    <span class="name">파랑네모 <small>/ @Kamome_nemo</small></span>
                 </div>
 
                 <hr class="credit-divider">
 
-                <div class="credit-section">
-                    <p class="credit-label">그래픽</p>
-                    <div class="credit-row"><span class="role">오프닝 일러스트</span><span class="name credit-note">임의 1번</span></div>
-                    <div class="credit-row"><span class="role">맵 스프라이트</span><span class="name">리밀</span></div>
-                    <div class="credit-row"><span class="role">로즈 페이스 그래픽</span><span class="name credit-note">임의 2번</span></div>
-                    <div class="credit-row"><span class="role">기존 언더테일 일러스트</span><span class="name">tobyfox</span></div>
+                <div class="credit-group">
+                    <span class="role">그래픽</span>
+                    <span class="name">오프닝 일러스트 — 임의 1번</span>
+                    <span class="name">맵 스프라이트 — 리밀</span>
+                    <span class="name">로즈 페이스 그래픽 — 임의 2번</span>
+                    <span class="name">기존 언더테일 일러스트 — tobyfox</span>
                 </div>
 
                 <hr class="credit-divider">
 
-                <div class="credit-section">
-                    <p class="credit-label">음악</p>
-                    <div class="credit-row"><span class="role">전체 BGM·SE (맵 전체 BGM 제외)</span><span class="name">tobyfox</span></div>
-                    <div class="credit-row"><span class="role">맵 전체 BGM</span><span class="name credit-note">임의 3번</span></div>
+                <div class="credit-group">
+                    <span class="role">음악</span>
+                    <span class="name">맵 전체 BGM을 제외한 모든 BGM · SE — tobyfox</span>
+                    <span class="name">맵 전체 BGM — 임의 4번</span>
                 </div>
 
                 <hr class="credit-divider">
 
-                <div class="credit-section">
-                    <p class="credit-label">기획 · 개발</p>
-                    <div class="credit-row"><span class="role">전반적 기획 및 스토리</span><span class="name">치린</span></div>
-                    <div class="credit-row"><span class="role">프로그래밍</span><span class="name">파랑네모</span></div>
-                    <div class="credit-row"><span class="role">이미지 가공</span><span class="name">파랑네모</span></div>
-                    <div class="credit-row"><span class="role">엔진</span><span class="name">RPG Maker MV</span></div>
+                <div class="credit-group">
+                    <span class="role">보이스</span>
+                    <span class="name">로즈 목소리 더빙 — 임의 3번</span>
+                </div>
+
+                <hr class="credit-divider">
+
+                <div class="credit-group">
+                    <span class="role">기획 · 프로그래밍</span>
+                    <span class="name">전반적 기획 및 스토리 — 치린</span>
+                    <span class="name">프로그래밍 — 파랑네모</span>
+                    <span class="name">이미지 가공 — 파랑네모</span>
+                </div>
+
+                <hr class="credit-divider">
+
+                <div class="credit-group">
+                    <span class="role">엔진</span>
+                    <span class="name">RPG Maker MV</span>
                 </div>
 
                 <button id="credit-close" onclick="document.getElementById('credit-modal').classList.remove('show')">닫기</button>
