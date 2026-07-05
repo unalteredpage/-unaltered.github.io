@@ -4,110 +4,11 @@
         <meta charset="UTF-8">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+        <meta name="viewport" content="user-scalable=no">
         <link rel="icon" href="icon/icon.png" type="image/png">
         <link rel="apple-touch-icon" href="icon/icon.png">
         <link rel="stylesheet" type="text/css" href="fonts/gamefont.css">
         <title>UNALTERED</title>
-        <style>
-            #credit-btn {
-                position: fixed;
-                left: 12px;
-                bottom: 12px;
-                z-index: 1000;
-                padding: 8px 14px;
-                font-family: sans-serif;
-                font-size: 14px;
-                color: #fff;
-                background: rgba(0, 0, 0, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.4);
-                border-radius: 6px;
-                cursor: pointer;
-                opacity: 0.5;
-                transition: opacity 0.2s;
-            }
-            #credit-btn:hover { opacity: 1; }
-
-            #credit-modal {
-                display: none;
-                position: fixed;
-                inset: 0;
-                z-index: 1001;
-                background: rgba(0, 0, 0, 0.8);
-                justify-content: center;
-                align-items: center;
-                padding: 20px;
-                box-sizing: border-box;
-            }
-            #credit-modal.show { display: flex; }
-
-            #credit-content {
-                display: flex;
-                flex-direction: column;
-                max-width: 460px;
-                width: 100%;
-                max-height: 90%;
-                color: #eee;
-                background: #1a1a1a;
-                border: 1px solid #444;
-                border-radius: 10px;
-                font-family: sans-serif;
-                line-height: 1.7;
-                box-sizing: border-box;
-            }
-            #credit-scroll {
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                padding: 28px 32px 8px;
-            }
-            #credit-content h2 {
-                margin: 0 0 20px;
-                text-align: center;
-                font-size: 22px;
-                letter-spacing: 2px;
-            }
-            .credit-group { margin-bottom: 18px; }
-            .credit-group .role {
-                display: block;
-                margin-bottom: 4px;
-                font-size: 13px;
-                color: #aaa;
-                letter-spacing: 1px;
-            }
-            .credit-group .name {
-                display: block;
-                padding-left: 10px;
-                font-size: 15px;
-                color: #fff;
-            }
-            .credit-group .name small { color: #888; }
-            .credit-divider {
-                margin: 20px 0;
-                border: none;
-                border-top: 1px solid #383838;
-            }
-            #credit-close {
-                flex-shrink: 0;
-                margin: 12px 20px 20px;
-                padding: 12px 24px;
-                color: #fff;
-                background: #333;
-                border: 1px solid #666;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 15px;
-            }
-            #credit-close:hover { background: #444; }
-
-            @media (max-width: 480px) {
-                #credit-modal { padding: 12px; }
-                #credit-scroll { padding: 20px 20px 6px; }
-                #credit-content h2 { font-size: 19px; margin-bottom: 16px; }
-                .credit-group .name { font-size: 14px; }
-                .credit-group .role { font-size: 12px; }
-                #credit-btn { font-size: 13px; padding: 7px 12px; }
-            }
-        </style>
     </head>
     <body style="background-color: black">
         <script type="text/javascript" src="js/libs/pixi.js"></script>
@@ -124,62 +25,5 @@
         <script type="text/javascript" src="js/rpg_windows.js"></script>
         <script type="text/javascript" src="js/plugins.js"></script>
         <script type="text/javascript" src="js/main.js"></script>
-
-        <button id="credit-btn" onclick="document.getElementById('credit-modal').classList.add('show')">크레딧</button>
-        <div id="credit-modal" onclick="if(event.target===this)this.classList.remove('show')">
-            <div id="credit-content">
-                <div id="credit-scroll">
-                    <h2>CREDIT</h2>
-
-                    <div class="credit-group">
-                        <span class="role">제작</span>
-                        <span class="name">파랑네모 <small>/ @Kamome_nemo</small></span>
-                    </div>
-
-                    <hr class="credit-divider">
-
-                    <div class="credit-group">
-                        <span class="role">그래픽</span>
-                        <span class="name">오프닝 일러스트 — 전달받지 못함 (임의 1번)</span>
-                        <span class="name">맵 스프라이트 — 리밀</span>
-                        <span class="name">로즈 페이스 그래픽 — 전달받지 못함 (임의 2번)</span>
-                        <span class="name">기존 언더테일 일러스트 — tobyfox</span>
-                    </div>
-
-                    <hr class="credit-divider">
-
-                    <div class="credit-group">
-                        <span class="role">음악</span>
-                        <span class="name">맵 전체 BGM을 제외한 모든 BGM · SE — tobyfox</span>
-                        <span class="name">맵 전체 BGM — 전달받지 못함 (임의 4번)</span>
-                    </div>
-
-                    <hr class="credit-divider">
-
-                    <div class="credit-group">
-                        <span class="role">보이스</span>
-                        <span class="name">로즈 목소리 더빙 — 전달받지 못함 (임의 3번)</span>
-                    </div>
-
-                    <hr class="credit-divider">
-
-                    <div class="credit-group">
-                        <span class="role">기획 · 프로그래밍</span>
-                        <span class="name">전반적 기획 및 스토리 — 치린</span>
-                        <span class="name">프로그래밍 — 파랑네모</span>
-                        <span class="name">이미지 가공 — 파랑네모</span>
-                    </div>
-
-                    <hr class="credit-divider">
-
-                    <div class="credit-group">
-                        <span class="role">엔진</span>
-                        <span class="name">RPG Maker MV</span>
-                    </div>
-                </div>
-
-                <button id="credit-close" onclick="document.getElementById('credit-modal').classList.remove('show')">닫기</button>
-            </div>
-        </div>
     </body>
 </html>
