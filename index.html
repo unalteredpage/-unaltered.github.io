@@ -9,6 +9,59 @@
         <link rel="apple-touch-icon" href="icon/icon.png">
         <link rel="stylesheet" type="text/css" href="fonts/gamefont.css">
         <title>UNALTERED</title>
+        <style>
+            #credit-btn {
+                position: fixed;
+                left: 12px;
+                bottom: 12px;
+                z-index: 1000;
+                padding: 8px 14px;
+                font-family: sans-serif;
+                font-size: 14px;
+                color: #fff;
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.4);
+                border-radius: 6px;
+                cursor: pointer;
+                opacity: 0.5;
+                transition: opacity 0.2s;
+            }
+            #credit-btn:hover { opacity: 1; }
+
+            #credit-modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 1001;
+                background: rgba(0, 0, 0, 0.8);
+                justify-content: center;
+                align-items: center;
+            }
+            #credit-modal.show { display: flex; }
+            #credit-content {
+                max-width: 480px;
+                width: 80%;
+                max-height: 70%;
+                overflow-y: auto;
+                padding: 24px;
+                color: #fff;
+                background: #1a1a1a;
+                border: 1px solid #444;
+                border-radius: 10px;
+                font-family: sans-serif;
+                line-height: 1.6;
+            }
+            #credit-content h2 { margin-top: 0; }
+            #credit-close {
+                margin-top: 16px;
+                padding: 6px 16px;
+                color: #fff;
+                background: #333;
+                border: 1px solid #666;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+        </style>
     </head>
     <body style="background-color: black">
         <script type="text/javascript" src="js/libs/pixi.js"></script>
@@ -25,5 +78,17 @@
         <script type="text/javascript" src="js/rpg_windows.js"></script>
         <script type="text/javascript" src="js/plugins.js"></script>
         <script type="text/javascript" src="js/main.js"></script>
+
+        <button id="credit-btn" onclick="document.getElementById('credit-modal').classList.add('show')">크레딧</button>
+        <div id="credit-modal">
+            <div id="credit-content">
+                <h2>크레딧</h2>
+                <p>제작: 이름</p>
+                <p>그래픽: 이름</p>
+                <p>음악: 이름</p>
+                <p>엔진: RPG Maker MV</p>
+                <button id="credit-close" onclick="document.getElementById('credit-modal').classList.remove('show')">닫기</button>
+            </div>
+        </div>
     </body>
 </html>
